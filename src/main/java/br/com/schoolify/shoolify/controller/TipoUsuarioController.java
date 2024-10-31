@@ -1,62 +1,59 @@
 package br.com.schoolify.shoolify.controller;
 
+import br.com.schoolify.shoolify.dto.AtividadeDTO;
+import br.com.schoolify.shoolify.dto.TipoUsuarioDTO;
 import br.com.schoolify.shoolify.model.TipoUsuario;
 import br.com.schoolify.shoolify.repository.TipoUsuarioRepository;
+import br.com.schoolify.shoolify.services.AtividadeService;
+import br.com.schoolify.shoolify.services.TipoUsuarioService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/tiposUsuarios")
+@RequestMapping("/tipoUsuarios")
 public class TipoUsuarioController {
 
     @Autowired
-    private TipoUsuarioRepository tipoUsuarioRepository;
+    private TipoUsuarioService service;
 
-    // GET - Listar todos os tipos de usuários
+    @GetMapping(value = "/{id}")
+    public ResponseEntity<TipoUsuarioDTO> findById(@PathVariable Long id) {
+        TipoUsuarioDTO dto = service.findById(id);
+        return ResponseEntity.ok(dto);
+    }
+
     @GetMapping
-    public List<TipoUsuario> listarTiposUsuarios() {
-        return tipoUsuarioRepository.findAll();
+    public ResponseEntity<Page<TipoUsuarioDTO>> findAll(Pageable pageable) {
+        Page<TipoUsuarioDTO> dto = service.findAll(pageable);
+        return ResponseEntity.ok(dto);
     }
 
-    // GET - Buscar tipo de usuário por ID
-    @GetMapping("/{id}")
-    public ResponseEntity<TipoUsuario> buscarTipoUsuarioPorId(@PathVariable Long id) {
-        Optional<TipoUsuario> tipoUsuario = tipoUsuarioRepository.findById(id);
-        return tipoUsuario.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // POST - Criar um novo tipo de usuário
     @PostMapping
-    public TipoUsuario criarTipoUsuario(@RequestBody TipoUsuario tipoUsuario) {
-        return tipoUsuarioRepository.save(tipoUsuario);
+    public ResponseEntity<TipoUsuarioDTO> insert(@Valid @RequestBody TipoUsuarioDTO dto) {
+        dto = service.insert(dto);
+        URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+                .buildAndExpand(dto.getId()).toUri();
+        return ResponseEntity.created(uri).body(dto);
     }
 
-    // PUT - Atualizar um tipo de usuário existente
-    @PutMapping("/{id}")
-    public ResponseEntity<TipoUsuario> atualizarTipoUsuario(@PathVariable Long id, @RequestBody TipoUsuario tipoUsuarioAtualizado) {
-        Optional<TipoUsuario> tipoUsuarioOptional = tipoUsuarioRepository.findById(id);
-        if (tipoUsuarioOptional.isPresent()) {
-            TipoUsuario tipoUsuario = tipoUsuarioOptional.get();
-            //tipoUsuario.setDescricao(tipoUsuarioAtualizado.getDescricao());
-            TipoUsuario tipoUsuarioSalvo = tipoUsuarioRepository.save(tipoUsuario);
-            return ResponseEntity.ok(tipoUsuarioSalvo);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @PutMapping(value = "/{id}")
+    public ResponseEntity<TipoUsuarioDTO> update(@PathVariable Long id, @Valid @RequestBody TipoUsuarioDTO dto) {
+        dto = service.update(id, dto);
+        return ResponseEntity.ok(dto);
     }
 
-    // DELETE - Excluir um tipo de usuário
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarTipoUsuario(@PathVariable Long id) {
-        if (tipoUsuarioRepository.existsById(id)) {
-            tipoUsuarioRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @DeleteMapping(value = "/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

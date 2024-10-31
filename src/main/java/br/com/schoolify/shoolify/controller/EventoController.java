@@ -1,66 +1,53 @@
 package br.com.schoolify.shoolify.controller;
 
-import br.com.schoolify.shoolify.model.Evento;
-import br.com.schoolify.shoolify.repository.EventoRepository;
+import br.com.schoolify.shoolify.dto.EventoDTO;
+import br.com.schoolify.shoolify.services.EventoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.List;
-import java.util.Optional;
+import java.net.URI;
 
 @RestController
 @RequestMapping("/eventos")
 public class EventoController {
 
     @Autowired
-    private EventoRepository eventoRepository;
+    private EventoService service;
 
-    // GET - Listar todos os eventos
+    @GetMapping(value = "/{id}")
+    public ResponseEntity<EventoDTO> findById(@PathVariable Long id) {
+        EventoDTO dto = service.findById(id);
+        return ResponseEntity.ok(dto);
+    }
+
     @GetMapping
-    public List<Evento> listarEventos() {
-        return eventoRepository.findAll();
+    public ResponseEntity<Page<EventoDTO>> findAll(Pageable pageable) {
+        Page<EventoDTO> dto = service.findAll(pageable);
+        return ResponseEntity.ok(dto);
     }
 
-    // GET - Buscar evento por ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Evento> buscarEventoPorId(@PathVariable Long id) {
-        Optional<Evento> evento = eventoRepository.findById(id);
-        return evento.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // POST - Criar um novo evento
     @PostMapping
-    public Evento criarEvento(@RequestBody Evento evento) {
-        return eventoRepository.save(evento);
+    public ResponseEntity<EventoDTO> insert(@Valid @RequestBody EventoDTO dto) {
+        dto = service.insert(dto);
+        URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+                .buildAndExpand(dto.getId()).toUri();
+        return ResponseEntity.created(uri).body(dto);
     }
 
-    // PUT - Atualizar um evento existente
-    @PutMapping("/{id}")
-    public ResponseEntity<Evento> atualizarEvento(@PathVariable Long id, @RequestBody Evento eventoAtualizado) {
-        Optional<Evento> eventoOptional = eventoRepository.findById(id);
-        if (eventoOptional.isPresent()) {
-            Evento evento = eventoOptional.get();
-            evento.setNome(eventoAtualizado.getNome());
-            evento.setDataInicio(eventoAtualizado.getDataInicio());
-            evento.setHoraInicio(eventoAtualizado.getHoraInicio());
-            evento.setDescricao(eventoAtualizado.getDescricao());
-            evento.setUsuario(eventoAtualizado.getUsuario());
-            Evento eventoSalvo = eventoRepository.save(evento);
-            return ResponseEntity.ok(eventoSalvo);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @PutMapping(value = "/{id}")
+    public ResponseEntity<EventoDTO> update(@PathVariable Long id, @Valid @RequestBody EventoDTO dto) {
+        dto = service.update(id, dto);
+        return ResponseEntity.ok(dto);
     }
 
-    // DELETE - Excluir um evento
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarEvento(@PathVariable Long id) {
-        if (eventoRepository.existsById(id)) {
-            eventoRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @DeleteMapping(value = "/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -24,7 +24,7 @@ public class TurmaPaiController {
 
     // GET - Buscar relação TurmaPai por ID
     @GetMapping("/{id}")
-    public ResponseEntity<TurmaPai> buscarTurmaPaiPorId(@PathVariable Integer id) {
+    public ResponseEntity<TurmaPai> buscarTurmaPaiPorId(@PathVariable Long id) {
         Optional<TurmaPai> turmaPai = turmaPaiRepository.findById(id);
         return turmaPai.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -37,7 +37,7 @@ public class TurmaPaiController {
 
     // PUT - Atualizar uma relação TurmaPai existente
     @PutMapping("/{id}")
-    public ResponseEntity<TurmaPai> atualizarTurmaPai(@PathVariable Integer id, @RequestBody TurmaPai turmaPaiAtualizada) {
+    public ResponseEntity<TurmaPai> atualizarTurmaPai(@PathVariable Long id, @RequestBody TurmaPai turmaPaiAtualizada) {
         Optional<TurmaPai> turmaPaiOptional = turmaPaiRepository.findById(id);
         if (turmaPaiOptional.isPresent()) {
             TurmaPai turmaPai = turmaPaiOptional.get();
@@ -52,7 +52,7 @@ public class TurmaPaiController {
 
     // DELETE - Excluir uma relação TurmaPai
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarTurmaPai(@PathVariable Integer id) {
+    public ResponseEntity<Void> deletarTurmaPai(@PathVariable Long id) {
         if (turmaPaiRepository.existsById(id)) {
             turmaPaiRepository.deleteById(id);
             return ResponseEntity.noContent().build();

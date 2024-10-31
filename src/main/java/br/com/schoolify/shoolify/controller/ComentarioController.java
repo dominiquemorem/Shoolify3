@@ -1,64 +1,55 @@
 package br.com.schoolify.shoolify.controller;
 
-import br.com.schoolify.shoolify.model.Comentario;
+import br.com.schoolify.shoolify.dto.ComentarioDTO;
 import br.com.schoolify.shoolify.repository.ComentarioRepository;
+import br.com.schoolify.shoolify.services.AtividadeService;
+import br.com.schoolify.shoolify.services.ComentarioService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.List;
-import java.util.Optional;
+import java.net.URI;
 
 @RestController
 @RequestMapping("/comentarios")
 public class ComentarioController {
 
     @Autowired
-    private ComentarioRepository comentarioRepository;
+    private ComentarioService service;
 
-    // GET - Listar todos os comentários
+    @GetMapping(value = "/{id}")
+    public ResponseEntity<ComentarioDTO> findById(@PathVariable Long id) {
+        ComentarioDTO dto = service.findById(id);
+        return ResponseEntity.ok(dto);
+    }
+
     @GetMapping
-    public List<Comentario> listarComentarios() {
-        return comentarioRepository.findAll();
+    public ResponseEntity<Page<ComentarioDTO>> findAll(Pageable pageable) {
+        Page<ComentarioDTO> dto = service.findAll(pageable);
+        return ResponseEntity.ok(dto);
     }
 
-    // GET - Buscar comentário por ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Comentario> buscarComentarioPorId(@PathVariable Long id) {
-        Optional<Comentario> comentario = comentarioRepository.findById(id);
-        return comentario.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // POST - Criar um novo comentário
     @PostMapping
-    public Comentario criarComentario(@RequestBody Comentario comentario) {
-        return comentarioRepository.save(comentario);
+    public ResponseEntity<ComentarioDTO> insert(@Valid @RequestBody ComentarioDTO dto) {
+        dto = service.insert(dto);
+        URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+                .buildAndExpand(dto.getId()).toUri();
+        return ResponseEntity.created(uri).body(dto);
     }
 
-    // PUT - Atualizar um comentário existente
-    @PutMapping("/{id}")
-    public ResponseEntity<Comentario> atualizarComentario(@PathVariable Long id, @RequestBody Comentario comentarioAtualizado) {
-        Optional<Comentario> comentarioOptional = comentarioRepository.findById(id);
-        if (comentarioOptional.isPresent()) {
-            Comentario comentario = comentarioOptional.get();
-            comentario.setConteudo(comentarioAtualizado.getConteudo());
-            comentario.setDataHora(comentarioAtualizado.getDataHora());
-            comentario.setAtividade(comentarioAtualizado.getAtividade());
-            Comentario comentarioSalvo = comentarioRepository.save(comentario);
-            return ResponseEntity.ok(comentarioSalvo);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @PutMapping(value = "/{id}")
+    public ResponseEntity<ComentarioDTO> update(@PathVariable Long id, @Valid @RequestBody ComentarioDTO dto) {
+        dto = service.update(id, dto);
+        return ResponseEntity.ok(dto);
     }
 
-    // DELETE - Excluir um comentário
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarComentario(@PathVariable Long id) {
-        if (comentarioRepository.existsById(id)) {
-            comentarioRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @DeleteMapping(value = "/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

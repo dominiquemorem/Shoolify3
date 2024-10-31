@@ -1,63 +1,54 @@
 package br.com.schoolify.shoolify.controller;
 
 
-import br.com.schoolify.shoolify.model.Turma;
-import br.com.schoolify.shoolify.repository.TurmaRepository;
+import br.com.schoolify.shoolify.dto.TurmaDTO;
+import br.com.schoolify.shoolify.services.TurmaService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.List;
-import java.util.Optional;
+import java.net.URI;
 
 @RestController
 @RequestMapping("/turmas")
 public class TurmaController {
 
     @Autowired
-    private TurmaRepository turmaRepository;
+    private TurmaService service;
 
-    // GET - Listar todas as turmas
+    @GetMapping(value = "/{id}")
+    public ResponseEntity<TurmaDTO> findById(@PathVariable Long id) {
+        TurmaDTO dto = service.findById(id);
+        return ResponseEntity.ok(dto);
+    }
+
     @GetMapping
-    public List<Turma> listarTurmas() {
-        return turmaRepository.findAll();
+    public ResponseEntity<Page<TurmaDTO>> findAll(Pageable pageable) {
+        Page<TurmaDTO> dto = service.findAll(pageable);
+        return ResponseEntity.ok(dto);
     }
 
-    // GET - Buscar turma por ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Turma> buscarTurmaPorId(@PathVariable Long id) {
-        Optional<Turma> turma = turmaRepository.findById(id);
-        return turma.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // POST - Criar uma nova turma
     @PostMapping
-    public Turma criarTurma(@RequestBody Turma turma) {
-        return turmaRepository.save(turma);
+    public ResponseEntity<TurmaDTO> insert(@Valid @RequestBody TurmaDTO dto) {
+        dto = service.insert(dto);
+        URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+                .buildAndExpand(dto.getId()).toUri();
+        return ResponseEntity.created(uri).body(dto);
     }
 
-    // PUT - Atualizar uma turma existente
-    @PutMapping("/{id}")
-    public ResponseEntity<Turma> atualizarTurma(@PathVariable Long id, @RequestBody Turma turmaAtualizada) {
-        Optional<Turma> turmaOptional = turmaRepository.findById(id);
-        if (turmaOptional.isPresent()) {
-            Turma turma = turmaOptional.get();
-            turma.setDescricao(turmaAtualizada.getDescricao());
-            Turma turmaSalva = turmaRepository.save(turma);
-            return ResponseEntity.ok(turmaSalva);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @PutMapping(value = "/{id}")
+    public ResponseEntity<TurmaDTO> update(@PathVariable Long id, @Valid @RequestBody TurmaDTO dto) {
+        dto = service.update(id, dto);
+        return ResponseEntity.ok(dto);
     }
 
-    // DELETE - Excluir uma turma
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarTurma(@PathVariable Long id) {
-        if (turmaRepository.existsById(id)) {
-            turmaRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @DeleteMapping(value = "/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

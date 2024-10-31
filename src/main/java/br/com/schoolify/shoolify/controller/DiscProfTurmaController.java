@@ -1,64 +1,53 @@
 package br.com.schoolify.shoolify.controller;
 
-import br.com.schoolify.shoolify.model.DiscProfTurma;
-import br.com.schoolify.shoolify.repository.DiscProfTurmaRepository;
+import br.com.schoolify.shoolify.dto.DiscProfTurmaDTO;
+import br.com.schoolify.shoolify.services.DiscProfTurmaService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.util.List;
-import java.util.Optional;
+import java.net.URI;
 
 @RestController
 @RequestMapping("/discProfTurma")
 public class DiscProfTurmaController {
 
     @Autowired
-    private DiscProfTurmaRepository discProfTurmaRepository;
+    private DiscProfTurmaService service;
 
-    // GET - Listar todas as relações DiscProfTurma
+    @GetMapping(value = "/{id}")
+    public ResponseEntity<DiscProfTurmaDTO> findById(@PathVariable Long id) {
+        DiscProfTurmaDTO dto = service.findById(id);
+        return ResponseEntity.ok(dto);
+    }
+
     @GetMapping
-    public List<DiscProfTurma> listarDiscProfTurma() {
-        return discProfTurmaRepository.findAll();
+    public ResponseEntity<Page<DiscProfTurmaDTO>> findAll(Pageable pageable) {
+        Page<DiscProfTurmaDTO> dto = service.findAll(pageable);
+        return ResponseEntity.ok(dto);
     }
 
-    // GET - Buscar relação DiscProfTurma por ID
-    @GetMapping("/{id}")
-    public ResponseEntity<DiscProfTurma> buscarDiscProfTurmaPorId(@PathVariable Integer id) {
-        Optional<DiscProfTurma> discProfTurma = discProfTurmaRepository.findById(id);
-        return discProfTurma.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // POST - Criar uma nova relação DiscProfTurma
     @PostMapping
-    public DiscProfTurma criarDiscProfTurma(@RequestBody DiscProfTurma discProfTurma) {
-        return discProfTurmaRepository.save(discProfTurma);
+    public ResponseEntity<DiscProfTurmaDTO> insert(@Valid @RequestBody DiscProfTurmaDTO dto) {
+        dto = service.insert(dto);
+        URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+                .buildAndExpand(dto.getId()).toUri();
+        return ResponseEntity.created(uri).body(dto);
     }
 
-    // PUT - Atualizar uma relação DiscProfTurma existente
-    @PutMapping("/{id}")
-    public ResponseEntity<DiscProfTurma> atualizarDiscProfTurma(@PathVariable Integer id, @RequestBody DiscProfTurma discProfTurmaAtualizada) {
-        Optional<DiscProfTurma> discProfTurmaOptional = discProfTurmaRepository.findById(id);
-        if (discProfTurmaOptional.isPresent()) {
-            DiscProfTurma discProfTurma = discProfTurmaOptional.get();
-            discProfTurma.setDisciplinas(discProfTurmaAtualizada.getDisciplinas());
-            discProfTurma.setUsuario(discProfTurmaAtualizada.getUsuario());
-            discProfTurma.setTurmas(discProfTurmaAtualizada.getTurmas());
-            DiscProfTurma discProfTurmaSalvo = discProfTurmaRepository.save(discProfTurma);
-            return ResponseEntity.ok(discProfTurmaSalvo);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @PutMapping(value = "/{id}")
+    public ResponseEntity<DiscProfTurmaDTO> update(@PathVariable Long id, @Valid @RequestBody DiscProfTurmaDTO dto) {
+        dto = service.update(id, dto);
+        return ResponseEntity.ok(dto);
     }
 
-    // DELETE - Excluir uma relação DiscProfTurma
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletarDiscProfTurma(@PathVariable Integer id) {
-        if (discProfTurmaRepository.existsById(id)) {
-            discProfTurmaRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @DeleteMapping(value = "/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
